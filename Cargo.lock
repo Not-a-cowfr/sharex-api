@@ -1331,12 +1331,14 @@ dependencies = [
  "actix-files",
  "actix-multipart",
  "actix-web",
+ "bytes",
  "dotenv",
  "futures-util",
  "mime",
  "rand 0.9.0",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
