@@ -3,7 +3,8 @@ use actix_multipart::Multipart;
 use futures_util::stream::StreamExt;
 use std::fs;
 use std::io::Write;
-use uuid::Uuid;
+use rand::distr::Alphanumeric;
+use rand::Rng;
 use dotenv::dotenv;
 use std::env;
 use mime_guess;
@@ -44,7 +45,12 @@ async fn handle_upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
             .map(|mime| mime.subtype().as_str())
             .unwrap_or("bin");
 
-        let filename = format!("{}.{}", Uuid::new_v4(), extension);
+        let random_id: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(5)
+            .map(char::from)
+            .collect();
+        let filename = format!("{}.{}", random_id, extension);
         let filepath = format!("./uploads/{}", filename);
 
         let mut f = fs::File::create(&filepath)?;
@@ -86,8 +92,22 @@ async fn view_file(path: web::Path<String>) -> impl Responder {
             let mime_str = content_type.as_ref();
             if mime_str == "image/png" || mime_str == "image/jpeg" || mime_str == "image/gif" {
                 let html = format!(
-                    r#"<img src="{}" alt="Uploaded image" style="max-width: 100%;" />"#,
-                    file_url
+                    r#"
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta property="og:title" content="Uploaded Image">
+                        <meta property="og:image" content="{}">
+                        <meta property="og:type" content="website">
+                        <title>Image Viewer</title>
+                    </head>
+                    <body>
+                        <img src="{}" alt="Uploaded image" style="max-width: 100%;">
+                    </body>
+                    </html>
+                    "#,
+                    file_url, file_url
                 );
                 return HttpResponse::Ok().content_type("text/html").body(html);
             }
