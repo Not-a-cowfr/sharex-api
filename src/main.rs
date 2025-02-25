@@ -91,6 +91,8 @@ async fn view_file(path: web::Path<String>) -> impl Responder {
         };
         return HttpResponse::Ok()
             .content_type(content_type)
+            .append_header(("Content-Disposition", "inline"))
+            .append_header(("Cache-Control", "public, max-age=31536000"))
             .body(file_content);
     }
 
