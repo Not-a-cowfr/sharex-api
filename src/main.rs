@@ -7,7 +7,6 @@ use rand::distr::Alphanumeric;
 use rand::Rng;
 use dotenv::dotenv;
 use std::env;
-use mime_guess;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -81,38 +80,19 @@ async fn handle_upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
 }
 
 async fn view_file(path: web::Path<String>) -> impl Responder {
-    let port = env::var("PORT").unwrap_or("8080".to_string());
-    let base_url = env::var("URL").unwrap_or(format!("http://localhost:{}", port));
     let filepath = format!("./uploads/{}", path.as_str());
-    let file_url = format!("{}/files/{}", base_url, path.as_str());
 
-    if let Ok(metadata) = fs::metadata(&filepath) {
-        if metadata.is_file() {
-            let content_type = mime_guess::from_path(&filepath).first_or_octet_stream();
-            let mime_str = content_type.as_ref();
-            if mime_str == "image/png" || mime_str == "image/jpeg" || mime_str == "image/gif" {
-                let html = format!(
-                    r#"
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta property="og:title" content="Uploaded Image">
-                        <meta property="og:image" content="{}">
-                        <meta property="og:type" content="website">
-                        <title>Image Viewer</title>
-                    </head>
-                    <body>
-                        <img src="{}" alt="Uploaded image" style="max-width: 100%;">
-                    </body>
-                    </html>
-                    "#,
-                    file_url, file_url
-                );
-                return HttpResponse::Ok().content_type("text/html").body(html);
-            }
-        }
+    if let Ok(file_content) = fs::read(&filepath) {
+        let content_type = match path.as_str().split('.').last() {
+            Some("png") => "image/png",
+            Some("jpg") | Some("jpeg") => "image/jpeg",
+            Some("gif") => "image/gif",
+            _ => "application/octet-stream",
+        };
+        return HttpResponse::Ok()
+            .content_type(content_type)
+            .body(file_content);
     }
-    println!("File not found or not an image: {}", filepath);
-    HttpResponse::NotFound().body("File not found or not an image")
+
+    HttpResponse::NotFound().body("File not found")
 }

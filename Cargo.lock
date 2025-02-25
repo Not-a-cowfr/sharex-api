@@ -1334,7 +1334,6 @@ dependencies = [
  "dotenv",
  "futures-util",
  "mime",
- "mime_guess",
  "rand 0.9.0",
  "serde",
  "serde_json",
