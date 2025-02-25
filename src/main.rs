@@ -13,6 +13,10 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let bind_address = env::var("BIND_ADDRESS").unwrap_or("0.0.0.0".to_string());
     let port = env::var("PORT").unwrap_or("8080".to_string()).parse::<u16>().unwrap();
+    println!("Starting server on {}:{}", bind_address, port);
+
+    fs::create_dir_all("./uploads").expect("Failed to create uploads directory");
+
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/upload").route(web::post().to(handle_upload)))
@@ -58,7 +62,7 @@ async fn handle_upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
             f.write_all(&data)?;
         }
 
-        let base_url = env::var("BASE_URL").unwrap_or(format!("http://localhost:{}", port));
+        let base_url = env::var("URL").unwrap_or(format!("http://localhost:{}", port));
         let view_url = format!("{}/view/{}", base_url, filename);
         return Ok(HttpResponse::Ok().json(serde_json::json!({
             "status": 200,
@@ -72,7 +76,7 @@ async fn handle_upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
 async fn view_file(path: web::Path<String>) -> impl Responder {
     let port = env::var("PORT").unwrap_or("8080".to_string());
-    let base_url = env::var("BASE_URL").unwrap_or(format!("http://localhost:{}", port));
+    let base_url = env::var("URL").unwrap_or(format!("http://localhost:{}", port));
     let filepath = format!("./uploads/{}", path.as_str());
     let file_url = format!("{}/files/{}", base_url, path.as_str());
 
@@ -80,44 +84,15 @@ async fn view_file(path: web::Path<String>) -> impl Responder {
         if metadata.is_file() {
             let content_type = mime_guess::from_path(&filepath).first_or_octet_stream();
             let mime_str = content_type.as_ref();
-            let (og_type, embed_html) = match content_type.as_ref() {
-                "image/png" | "image/jpeg" | "image/gif" => (
-                    "image",
-                    format!(r#"<img src="{}" alt="Uploaded content" style="max-width: 100%;" />"#, file_url)
-                ),
-                "video/mp4" | "video/webm" => (
-                    "video",
-                    format!(r#"<video controls><source src="{}" type="{}">Your browser does not support the video tag.</video>"#, file_url, mime_str)
-                ),
-                "text/plain" => (
-                    "article",
-                    format!(r#"<pre style="white-space: pre-wrap;">Content not directly viewable here. Download: <a href="{}">{}</a></pre>"#, file_url, path.as_str())
-                ),
-                _ => (
-                    "file",
-                    format!(r#"<p>Content not directly viewable. Download: <a href="{}">{}</a></p>"#, file_url, path.as_str())
-                ),
-            };
-
-            let html = format!(
-                r#"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta property="og:image" content="{}">
-                    <meta property="og:type" content="{}">
-                    <meta property="og:title" content="Uploaded File">
-                    <meta charset="utf-8" />
-                </head>
-                <body>
-                    {}
-                </body>
-                </html>
-                "#,
-                file_url, og_type, embed_html
-            );
-            return HttpResponse::Ok().content_type("text/html").body(html);
+            if mime_str == "image/png" || mime_str == "image/jpeg" || mime_str == "image/gif" {
+                let html = format!(
+                    r#"<img src="{}" alt="Uploaded image" style="max-width: 100%;" />"#,
+                    file_url
+                );
+                return HttpResponse::Ok().content_type("text/html").body(html);
+            }
         }
     }
-    HttpResponse::NotFound().body("File not found")
+    println!("File not found or not an image: {}", filepath);
+    HttpResponse::NotFound().body("File not found or not an image")
 }
