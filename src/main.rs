@@ -115,6 +115,13 @@ async fn view_file(
             Some("png") => "image/png",
             Some("jpg") | Some("jpeg") => "image/jpeg",
             Some("gif") => "image/gif",
+            Some("pdf") => "application/pdf",
+            Some("txt") => "text/plain",
+            Some("html") | Some("htm") => "text/html",
+            Some("css") => "text/css",
+            Some("js") => "application/javascript",
+            Some("json") => "application/json",
+            Some("xml") => "application/xml",
             _ => "application/octet-stream",
         };
         return HttpResponse::Ok()
