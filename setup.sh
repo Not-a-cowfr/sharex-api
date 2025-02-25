@@ -19,7 +19,5 @@ cargo --version
 
 echo "Building..."
 cargo build --release
-echo "Build complete! Starting..."
-cargo run --release
 
 echo "Done!"
