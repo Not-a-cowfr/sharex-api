@@ -4,17 +4,27 @@ set -e
 
 echo "Starting setup for sharex-uploader Rust app..."
 
-chmod +x "$0"
-
 echo "Updating system package manager..."
-sudo apt update -y || { echo "Failed to update package manager"; exit 1; }
+if command -v sudo &> /dev/null; then
+    sudo apt update -y || { echo "Failed to update package manager with sudo"; exit 1; }
+else
+    apt update -y || { echo "Failed to update package manager"; exit 1; }
+fi
 
 echo "Installing system dependencies..."
-sudo apt install -y \
-    build-essential \
-    curl \
-    libssl-dev \
-    pkg-config || { echo "Failed to install dependencies"; exit 1; }
+if command -v sudo &> /dev/null; then
+    sudo apt install -y \
+        build-essential \
+        curl \
+        libssl-dev \
+        pkg-config || { echo "Failed to install dependencies with sudo"; exit 1; }
+else
+    apt install -y \
+        build-essential \
+        curl \
+        libssl-dev \
+        pkg-config || { echo "Failed to install dependencies"; exit 1; }
+fi
 
 if ! command -v rustc &> /dev/null; then
     echo "Installing Rust..."
