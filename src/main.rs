@@ -20,7 +20,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/upload").route(web::post().to(handle_upload)))
-            .service(web::resource("/view/{file_id}").route(web::get().to(view_file)))
+            .service(web::resource("/{file_id}").route(web::get().to(view_file)))
             .service(actix_files::Files::new("/files", "./uploads"))
     })
     .bind(format!("{}:{}", bind_address, port))?
@@ -68,7 +68,7 @@ async fn handle_upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
         }
 
         let base_url = env::var("URL").unwrap_or(format!("http://localhost:{}", port));
-        let view_url = format!("{}/view/{}", base_url, filename);
+        let view_url = format!("{}/{}", base_url, filename);
         return Ok(HttpResponse::Ok().json(serde_json::json!({
             "status": 200,
             "data": {
