@@ -1,30 +1,8 @@
 #!/bin/bash
-
 set -e
 
-echo "Starting setup for sharex-uploader Rust app..."
-
-echo "Updating system package manager..."
-if command -v sudo &> /dev/null; then
-    sudo apt update -y || { echo "Failed to update package manager with sudo"; exit 1; }
-else
-    apt update -y || { echo "Failed to update package manager"; exit 1; }
-fi
-
-echo "Installing system dependencies..."
-if command -v sudo &> /dev/null; then
-    sudo apt install -y \
-        build-essential \
-        curl \
-        libssl-dev \
-        pkg-config || { echo "Failed to install dependencies with sudo"; exit 1; }
-else
-    apt install -y \
-        build-essential \
-        curl \
-        libssl-dev \
-        pkg-config || { echo "Failed to install dependencies"; exit 1; }
-fi
+echo "Starting setup..."
+echo "Checking Rust installation..."
 
 if ! command -v rustc &> /dev/null; then
     echo "Installing Rust..."
@@ -40,8 +18,8 @@ rustc --version
 cargo --version
 
 echo "Building..."
-cargo build --release || { echo "Build failed"; exit 1; }
-echo "Build complete! Starting the app..."
-cargo run --release || { echo "Run failed"; exit 1; }
+cargo build --release
+echo "Build complete! Starting..."
+cargo run --release
 
-echo "Setup and run complete! Your app should be running now."
+echo "Done!"
